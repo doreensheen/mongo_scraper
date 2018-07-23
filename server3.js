@@ -37,10 +37,10 @@ app.get("/scrape", function(req, res) {
 
       result.title = $(this).text();
       result.link = $(this).parent().attr("href");
+      result.saved = false;
 
       db.Article.create(result)
         .then(function(dbArticle) {
-          console.log(dbArticle);
         })
         .catch(function(err) {
           return res.json(err);
@@ -60,16 +60,52 @@ app.get("/articles", function(req, res) {
     });
 });
 
+app.get("/articlessaved", function(req, res) {
+  db.Article.find({"saved": "true"})
+  .then(function(dbArticle) {
+    res.json(dbArticle);
+  }).catch(function(err) {
+    res.json(err);
+  })
+})
+
 app.get("/articles/:id", function(req, res) {
   db.Article.findOne({ _id: req.params.id })
     .populate("note")
     .then(function(dbArticle) {
       res.json(dbArticle);
+      console.log("Saved Article: " + dbArticle);
     })
     .catch(function(err) {
       res.json(err);
     });
 });
+
+app.get("/save/:id", function(req, res) {
+  console.log("saved id " + req.params.id);
+  var objectId = 'ObjectId("' + req.params.id + '")'
+  console.log(objectId);
+  db.Article.update({"_id": objectId }, {$set: {"saved": true}})
+    .then(function(dbArticle) {
+      res.json(dbArticle);
+      console.log("Saved Article: " + dbArticle);
+    })
+    .catch(function(err) {
+      res.json(err);
+    })
+})
+
+app.get("/remove", function(req, res) {
+  console.log(req.params.id);
+  db.Article.update({"_id": req.params.id }, {$set: {"saved":"false"}})
+    .then(function(dbArticle) {
+      res.json(dbArticle);
+      console.log("Removed Article: " + dbArticle);
+    })
+    .catch(function(err) {
+      res.json(err);
+    })
+})
 
 // Start the server
 app.listen(PORT, function() {
